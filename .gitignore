@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+data/raw/
+data/derived/
+models/
+*.wav
+*.mp3
+*.flac
+.env
+.env.*
+!.env.example
+*.WAV
+*.zip
+.coverage
+htmlcov/
