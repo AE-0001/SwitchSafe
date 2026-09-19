@@ -77,8 +77,8 @@ Do not use model hypotheses as ground-truth references.
 The real-audio run covers **one speaker across two sessions**, not 100 speakers.
 It measures inference performance and routing, not validated transcript accuracy.
 Confidence thresholds are uncalibrated; acceptance does not prove correctness.
-Retry, confirmation and escalation are routing outputs, not external integrations.
-No downstream agent actions are executed.
+Retry, confirmation and escalation are routing outputs. Agent tools are local
+sandbox simulations; no external service requests or physical actions are executed.
 
 - [CPU results](evaluation/CPU_RESULTS.md)
 - [Evaluation methodology](EVALUATION.md)
@@ -110,3 +110,23 @@ diagnostics, paraphrases, missing identifiers, confirmation gates and injected
 tool timeouts. A real local Qwen3 4B planner is evaluated separately through
 Ollama so model-schema adherence and planning recall are not conflated with the
 deterministic orchestration tests. See [AgentBench results](evaluation/AGENT_RESULTS.md).
+
+## Integrated voice-agent runtime
+
+```text
+WAV → Speech Gate Agent → Qwen Planner Agent → Retrieval Agent
+    → Permission-Gated Execution Agent → Verification Agent → response + trace
+```
+
+```powershell
+$env:PYTHONPATH = "$PWD\src"
+.\.venv\Scripts\python.exe -m switchsafe.cli `
+  --voice-agent path\to\request.wav `
+  --model tiny.en `
+  --llm-model qwen3:4b
+```
+
+Add `--approve-action` only when authorizing a mutating tool. Audio that fails
+the ASR confidence gate never reaches the planner. Ollama must be running and the
+selected Qwen model must be installed. The returned JSON contains each agent's
+decision, retrieved evidence, tool calls, observations and verification result.
