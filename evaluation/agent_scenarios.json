@@ -1,0 +1,6 @@
+[
+  {"id":"diagnose-e7","query":"Device HP-42 shows E7","expected_status":"completed","expected_tools":["get_device_status"]},
+  {"id":"service-unapproved","query":"Device HP-42 shows E7. Create a service request","expected_status":"awaiting_confirmation","expected_tools":["get_device_status","create_service_request"]},
+  {"id":"service-approved","query":"Device HP-42 needs a service appointment","approved":true,"expected_status":"completed","expected_tools":["get_device_status","create_service_request"]},
+  {"id":"missing-device","query":"My unit shows E7","expected_status":"needs_clarification","expected_tools":[]}
+]

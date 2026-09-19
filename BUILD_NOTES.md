@@ -19,3 +19,8 @@ an autonomous agent swarm, and its benchmark is not a production deployment.
 Raw IMDA audio and transcript outputs are excluded from this repository. Supply
 your own authorised local copy to reproduce inference. Policy decisions are
 inspectable outputs; downstream agent actions are deliberately not executed.
+
+The AgentBench extension begins with deterministic planner and tool adapters. This
+isolates orchestration and evaluation correctness before adding a non-deterministic
+model provider. It is not presented as frontier-model evaluation until such a
+provider has actually been run.

@@ -87,3 +87,20 @@ No downstream agent actions are executed.
 
 Next steps: independent transcript review, held-out-speaker evaluation and
 threshold calibration against action-specific failure labels.
+
+## AgentBench extension
+
+SwitchSafe also contains an evaluation-first Plan-and-Execute harness. It combines
+hybrid lexical/vector retrieval, an explicit shared state, allowlisted tools,
+confirmation gates for mutating actions and a post-execution grounding check.
+
+```sh
+python -m switchsafe.cli --agent-eval evaluation/agent_scenarios.json
+```
+
+The command compares direct, Plan-and-Execute and verified Plan-and-Execute
+strategies over labelled trajectories. It reports exact task success, grounding,
+unauthorized-action rate and p50/p95 orchestration latency. Included tools are
+deterministic sandbox simulations, making evaluation reproducible without an API
+key. A model provider can later replace planning and synthesis without changing
+the tool-security or evaluation contracts.

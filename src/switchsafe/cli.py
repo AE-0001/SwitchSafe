@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from switchsafe.agentbench import Evidence, Strategy, evaluate
 from switchsafe.benchmark import run
 from switchsafe.corpus import run_directory
 from switchsafe.policy import RiskSignals, decide, policy_metrics
@@ -28,6 +29,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark failure-aware ASR")
     parser.add_argument("manifest", type=Path, nargs="?")
     parser.add_argument("--demo", action="store_true")
+    parser.add_argument("--agent-eval", type=Path, help="evaluate agent trajectories from JSON")
     parser.add_argument("--audio-dir", type=Path, help="transcribe unlabelled WAV files")
     parser.add_argument("--output", type=Path, default=Path("data/derived/benchmark.json"))
     parser.add_argument("--model", default="tiny.en")
@@ -35,6 +37,16 @@ def main() -> None:
     args = parser.parse_args()
     if args.demo:
         print(json.dumps(demo(), indent=2))
+        return
+    if args.agent_eval:
+        scenarios = json.loads(args.agent_eval.read_text(encoding="utf-8"))
+        corpus = [
+            Evidence("manual-e7", "Error E7 requires diagnostics before arranging service."),
+            Evidence("safety", "Service creation is a mutating action that requires confirmation."),
+            Evidence("fallback", "Escalate when guidance or required identifiers are missing."),
+        ]
+        results = [evaluate(scenarios, corpus, strategy) for strategy in Strategy]
+        print(json.dumps({"mode": "agent_strategy_evaluation", "results": results}, indent=2))
         return
     if args.audio_dir:
         print(json.dumps(run_directory(args.audio_dir, args.output, args.model, args.limit), indent=2))
