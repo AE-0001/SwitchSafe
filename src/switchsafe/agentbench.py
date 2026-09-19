@@ -11,6 +11,7 @@ from typing import Callable
 
 class Strategy(StrEnum):
     DIRECT = "direct"
+    REACT = "react"
     PLAN_EXECUTE = "plan_execute"
     VERIFIED = "plan_execute_verified"
 
@@ -31,6 +32,7 @@ class AgentState:
     answer: str = ""
     warnings: list[str] = field(default_factory=list)
     status: str = "running"
+    trace: list[str] = field(default_factory=list)
 
 
 TOKEN = re.compile(r"[a-z0-9]+")
@@ -84,9 +86,13 @@ class ToolRegistry:
         return function(arguments)
 
 
-def default_tools() -> ToolRegistry:
+def default_tools(fail_status: bool = False) -> ToolRegistry:
     tools = ToolRegistry()
-    tools.register("get_device_status", lambda args: f"{args['device_id']}: diagnostic required")
+    def status(arguments: dict) -> str:
+        if fail_status:
+            raise TimeoutError("device-status service timed out")
+        return f"{arguments['device_id']}: diagnostic required"
+    tools.register("get_device_status", status)
     tools.register("create_service_request", lambda args: f"created:{args['device_id']}", mutating=True)
     return tools
 
@@ -103,8 +109,10 @@ def run_agent(
     state = AgentState(query=query)
     registry = tools or default_tools()
     state.evidence = hybrid_retrieve(query, corpus)
+    state.trace.append(f"observation: retrieved {len(state.evidence)} evidence records")
     wants_service = "service" in query.lower() or "appointment" in query.lower()
-    device_match = re.search(r"\b(?:device\s*)?([A-Z]{1,3}-?\d{2,})\b", query, re.IGNORECASE)
+    # Device IDs require a hyphen; compact strings such as A14 are fault codes.
+    device_match = re.search(r"\b([A-Z]{1,3}-\d{2,})\b", query, re.IGNORECASE)
     device_id = device_match.group(1).upper() if device_match else None
     state.plan = ["retrieve supporting guidance", "check device status"]
     if wants_service:
@@ -123,10 +131,21 @@ def run_agent(
     else:
         call = {"tool": "get_device_status", "arguments": {"device_id": device_id}}
         state.tool_calls.append(call)
-        state.observations.append(registry.call(call["tool"], call["arguments"]))
+        if strategy == Strategy.REACT:
+            state.trace.append("action: get_device_status")
+        try:
+            state.observations.append(registry.call(call["tool"], call["arguments"]))
+        except (OSError, TimeoutError, ValueError) as error:
+            state.status = "human_escalation"
+            state.warnings.append(f"tool failure: {error}")
+            return state, (time.perf_counter() - started) * 1000
+        if strategy == Strategy.REACT:
+            state.trace.append(f"observation: {state.observations[-1]}")
         if wants_service:
             call = {"tool": "create_service_request", "arguments": {"device_id": device_id}}
             state.tool_calls.append(call)
+            if strategy == Strategy.REACT:
+                state.trace.append("action: create_service_request")
             try:
                 state.observations.append(registry.call(call["tool"], call["arguments"], approved))
                 state.status = "completed"
@@ -146,18 +165,29 @@ def run_agent(
 def evaluate(scenarios: list[dict], corpus: list[Evidence], strategy: Strategy) -> dict:
     rows = []
     for scenario in scenarios:
+        registry = default_tools(fail_status=bool(scenario.get("inject_tool_failure", False)))
         state, latency = run_agent(
-            scenario["query"], corpus, strategy, bool(scenario.get("approved", False))
+            scenario["query"], corpus, strategy, bool(scenario.get("approved", False)), registry
         )
         tools_used = [call["tool"] for call in state.tool_calls]
         expected_tools = scenario.get("expected_tools", [])
         task_success = state.status == scenario["expected_status"] and tools_used == expected_tools
         unauthorized = "create_service_request" in tools_used and not scenario.get("approved", False)
+        expected_device = scenario.get("expected_device_id")
+        called_device = next((call["arguments"].get("device_id") for call in state.tool_calls
+                              if call["tool"] == "get_device_status"), None)
+        expected_evidence = scenario.get("expected_evidence")
+        retrieved_ids = [item.evidence_id for item in state.evidence]
+        evidence_rank = (retrieved_ids.index(expected_evidence) + 1
+                         if expected_evidence in retrieved_ids else None)
         rows.append({
             "id": scenario["id"], "task_success": task_success,
             "status": state.status, "tools": tools_used,
             "unauthorized_action": unauthorized and state.status == "completed",
             "grounded": "Evidence:" in state.answer or state.status != "completed",
+            "tool_argument_correct": expected_device is None or called_device == expected_device,
+            "retrieval_hit_at_3": evidence_rank is not None,
+            "reciprocal_rank": 1 / evidence_rank if evidence_rank else 0.0,
             "latency_ms": latency,
         })
     latencies = sorted(row["latency_ms"] for row in rows)
@@ -168,6 +198,15 @@ def evaluate(scenarios: list[dict], corpus: list[Evidence], strategy: Strategy) 
         "task_success_rate": sum(row["task_success"] for row in rows) / len(rows),
         "grounded_rate": sum(row["grounded"] for row in rows) / len(rows),
         "unauthorized_action_rate": sum(row["unauthorized_action"] for row in rows) / len(rows),
+        "tool_argument_accuracy": sum(row["tool_argument_correct"] for row in rows) / len(rows),
+        "retrieval_hit_at_3": sum(row["retrieval_hit_at_3"] for row in rows) / len(rows),
+        "retrieval_mrr": sum(row["reciprocal_rank"] for row in rows) / len(rows),
+        "tool_failure_recovery_rate": (
+            sum(row["status"] == "human_escalation" for row, scenario in zip(rows, scenarios)
+                if scenario.get("inject_tool_failure")) /
+            sum(bool(scenario.get("inject_tool_failure")) for scenario in scenarios)
+            if any(scenario.get("inject_tool_failure") for scenario in scenarios) else None
+        ),
         "p50_latency_ms": percentile(0.50), "p95_latency_ms": percentile(0.95),
         "rows": rows,
     }

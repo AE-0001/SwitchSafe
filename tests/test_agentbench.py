@@ -52,3 +52,16 @@ def test_direct_baseline_does_not_execute_required_tools():
     result = evaluate(scenarios, CORPUS, Strategy.DIRECT)
     assert result["task_success_rate"] == 0
     assert result["grounded_rate"] == 0
+
+
+def test_fault_code_is_not_mistaken_for_device_identifier():
+    state, _ = run_agent("My unit shows A14", CORPUS)
+    assert state.status == "needs_clarification"
+    assert state.tool_calls == []
+
+
+def test_tool_timeout_escalates_instead_of_crashing():
+    from switchsafe.agentbench import default_tools
+    state, _ = run_agent("Device HP-42 shows E7", CORPUS, tools=default_tools(fail_status=True))
+    assert state.status == "human_escalation"
+    assert "timed out" in state.warnings[0]

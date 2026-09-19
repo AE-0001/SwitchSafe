@@ -14,3 +14,4 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: python -m pytest -q
       - run: python -m switchsafe.cli --demo
+      - run: python -m switchsafe.cli --agent-matrix > agent-matrix.json

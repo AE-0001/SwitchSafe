@@ -104,3 +104,9 @@ unauthorized-action rate and p50/p95 orchestration latency. Included tools are
 deterministic sandbox simulations, making evaluation reproducible without an API
 key. A model provider can later replace planning and synthesis without changing
 the tool-security or evaluation contracts.
+
+The current benchmark contains 120 deterministic labelled trajectories spanning
+diagnostics, paraphrases, missing identifiers, confirmation gates and injected
+tool timeouts. A real local Qwen3 4B planner is evaluated separately through
+Ollama so model-schema adherence and planning recall are not conflated with the
+deterministic orchestration tests. See [AgentBench results](evaluation/AGENT_RESULTS.md).

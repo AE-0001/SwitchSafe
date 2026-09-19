@@ -8,6 +8,8 @@ from switchsafe.agentbench import Evidence, Strategy, evaluate
 from switchsafe.benchmark import run
 from switchsafe.corpus import run_directory
 from switchsafe.policy import RiskSignals, decide, policy_metrics
+from switchsafe.scenarios import build_scenarios, evaluation_corpus
+from switchsafe.llm_provider import OllamaPlanner, evaluate_planner
 
 
 def demo() -> dict:
@@ -30,6 +32,9 @@ def main() -> None:
     parser.add_argument("manifest", type=Path, nargs="?")
     parser.add_argument("--demo", action="store_true")
     parser.add_argument("--agent-eval", type=Path, help="evaluate agent trajectories from JSON")
+    parser.add_argument("--agent-matrix", action="store_true", help="run the built-in 120-case suite")
+    parser.add_argument("--llm-eval", type=int, metavar="N", help="evaluate N cases with local Ollama")
+    parser.add_argument("--llm-model", default="qwen3:4b")
     parser.add_argument("--audio-dir", type=Path, help="transcribe unlabelled WAV files")
     parser.add_argument("--output", type=Path, default=Path("data/derived/benchmark.json"))
     parser.add_argument("--model", default="tiny.en")
@@ -47,6 +52,15 @@ def main() -> None:
         ]
         results = [evaluate(scenarios, corpus, strategy) for strategy in Strategy]
         print(json.dumps({"mode": "agent_strategy_evaluation", "results": results}, indent=2))
+        return
+    if args.agent_matrix:
+        scenarios, corpus = build_scenarios(), evaluation_corpus()
+        results = [evaluate(scenarios, corpus, strategy) for strategy in Strategy]
+        print(json.dumps({"mode": "agent_strategy_evaluation", "results": results}, indent=2))
+        return
+    if args.llm_eval:
+        scenarios = build_scenarios()[:args.llm_eval]
+        print(json.dumps(evaluate_planner(OllamaPlanner(args.llm_model), scenarios), indent=2))
         return
     if args.audio_dir:
         print(json.dumps(run_directory(args.audio_dir, args.output, args.model, args.limit), indent=2))

@@ -1,0 +1,182 @@
+{
+  "model": "qwen3:4b",
+  "scenarios": 12,
+  "schema_valid_rate": 1.0,
+  "mean_required_step_recall": 0.9166666666666665,
+  "p95_latency_ms": 5740.980500122532,
+  "prompt_tokens": 707,
+  "completion_tokens": 1117,
+  "rows": [
+    {
+      "id": "diagnose-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 4194.8430999182165,
+      "prompt_tokens": 58,
+      "completion_tokens": 107
+    },
+    {
+      "id": "service-blocked-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification",
+        "create_service_request"
+      ],
+      "schema_valid": true,
+      "latency_ms": 5395.136000122875,
+      "prompt_tokens": 63,
+      "completion_tokens": 145
+    },
+    {
+      "id": "service-approved-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 0.6666666666666666,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 1255.5241999216378,
+      "prompt_tokens": 59,
+      "completion_tokens": 29
+    },
+    {
+      "id": "missing-device-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 4369.218700099736,
+      "prompt_tokens": 55,
+      "completion_tokens": 117
+    },
+    {
+      "id": "paraphrase-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 1084.0716999955475,
+      "prompt_tokens": 63,
+      "completion_tokens": 29
+    },
+    {
+      "id": "appointment-blocked-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification",
+        "create_service_request"
+      ],
+      "schema_valid": true,
+      "latency_ms": 5503.464799840003,
+      "prompt_tokens": 58,
+      "completion_tokens": 146
+    },
+    {
+      "id": "mixed-case-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 1104.5534999575466,
+      "prompt_tokens": 59,
+      "completion_tokens": 29
+    },
+    {
+      "id": "service-language-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 0.6666666666666666,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 4739.636100130156,
+      "prompt_tokens": 59,
+      "completion_tokens": 121
+    },
+    {
+      "id": "diagnostic-language-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 4160.5382999405265,
+      "prompt_tokens": 61,
+      "completion_tokens": 107
+    },
+    {
+      "id": "no-id-service-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification",
+        "create_service_request"
+      ],
+      "schema_valid": true,
+      "latency_ms": 5043.431299971417,
+      "prompt_tokens": 57,
+      "completion_tokens": 127
+    },
+    {
+      "id": "concise-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 1.0,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 5740.980500122532,
+      "prompt_tokens": 56,
+      "completion_tokens": 131
+    },
+    {
+      "id": "approved-appointment-HP-40-E7",
+      "valid": true,
+      "required_step_recall": 0.6666666666666666,
+      "steps": [
+        "retrieve_guidance",
+        "check_device_status",
+        "ask_clarification"
+      ],
+      "schema_valid": true,
+      "latency_ms": 1747.6997999474406,
+      "prompt_tokens": 59,
+      "completion_tokens": 29
+    }
+  ]
+}
