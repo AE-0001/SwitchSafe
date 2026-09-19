@@ -15,6 +15,23 @@ Built with Python, Faster-Whisper, CTranslate2 and Pytest. CPU INT8 evaluation o
 p95** and **0.114 mean real-time factor**. See [benchmark evidence](evaluation/CPU_RESULTS.md)
 for measurement scope and limitations.
 
+## Verified evaluation snapshot
+
+| Evaluation | Result |
+|---|---:|
+| Real IMDA recordings completed | 682 / 682 |
+| ASR latency | 0.499 s p50 / 0.729 s p95 |
+| Mean real-time factor | 0.114 |
+| Labelled agent trajectories | 120 |
+| Verified Plan-and-Execute task success | 100% |
+| Unauthorized-action rate | 0% |
+| Qwen3 4B planner schema validity | 100% on 12 cases |
+| Qwen3 4B required-step recall | 91.7% on 12 cases |
+| Automated tests | 30 passing |
+
+See [CPU results](evaluation/CPU_RESULTS.md) and
+[AgentBench results](evaluation/AGENT_RESULTS.md) for methodology and limitations.
+
 ## Try it in minutes
 
 ```sh
