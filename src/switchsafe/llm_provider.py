@@ -41,6 +41,41 @@ class OllamaPlanner:
             "completion_tokens": payload.get("eval_count"),
         }
 
+    def task_actions(self, query: str) -> dict:
+        """Translate natural language into allowlisted local task actions."""
+        prompt = """Return JSON only as {"actions":[{"tool":"...","arguments":{...}}]}.
+Allowed tools and arguments:
+- create_task: title string
+- list_tasks: no arguments
+- complete_task: task_id integer
+- save_note: text string
+- search_notes: query string
+Use only these tools. If unsupported or required information is missing, return an empty actions list.
+Use the exact tool names above. Examples:
+"Add submit application to my tasks" -> {"actions":[{"tool":"create_task","arguments":{"title":"submit application"}}]}
+"Show my tasks" -> {"actions":[{"tool":"list_tasks","arguments":{}}]}
+"Save a note that my interview is Tuesday" -> {"actions":[{"tool":"save_note","arguments":{"text":"my interview is Tuesday"}}]}
+User request: """ + query
+        body = json.dumps({"model": self.model, "prompt": prompt, "stream": False,
+                           "think": False, "format": "json",
+                           "options": {"temperature": 0}}).encode()
+        started = time.perf_counter()
+        request = Request(f"{self.base_url}/api/generate", data=body,
+                          headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=120) as response:
+            payload = json.load(response)
+        parsed = json.loads(payload["response"])
+        actions = parsed.get("actions", [])
+        allowed = {"create_task", "list_tasks", "complete_task", "save_note", "search_notes"}
+        valid = isinstance(actions, list) and all(
+            isinstance(item, dict) and item.get("tool") in allowed
+            and isinstance(item.get("arguments", {}), dict) for item in actions
+        )
+        return {"actions": actions if valid else [], "schema_valid": valid,
+                "latency_ms": (time.perf_counter() - started) * 1000,
+                "prompt_tokens": payload.get("prompt_eval_count"),
+                "completion_tokens": payload.get("eval_count")}
+
 
 def evaluate_planner(planner: OllamaPlanner, scenarios: list[dict]) -> dict:
     rows = []

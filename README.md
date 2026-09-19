@@ -6,6 +6,10 @@
 transcript straight to an agent, SwitchSafe produces an inspectable accept,
 retry, confirm or escalate decision.
 
+Its runnable application is a local voice-action assistant. Accepted speech is
+converted by Qwen3 into allowlisted task and note operations, protected by
+confirmation gates, persisted in SQLite and returned with an auditable trace.
+
 Built with Python, Faster-Whisper, CTranslate2 and Pytest. CPU INT8 evaluation on
 **682 real IMDA Singapore-English recordings** measured **0.499 s p50**, **0.729 s
 p95** and **0.114 mean real-time factor**. See [benchmark evidence](evaluation/CPU_RESULTS.md)
@@ -114,8 +118,28 @@ deterministic orchestration tests. See [AgentBench results](evaluation/AGENT_RES
 ## Integrated voice-agent runtime
 
 ```text
-WAV → Speech Gate Agent → Qwen Planner Agent → Retrieval Agent
-    → Permission-Gated Execution Agent → Verification Agent → response + trace
+WAV → Speech Gate → Qwen Action Planner → Permission Gate
+    → SQLite Task/Note Tools → State Verification → response + trace
+```
+
+Supported real local tools are `list_tasks`, `search_notes`, `create_task`,
+`complete_task` and `save_note`. The last three change SQLite state and therefore
+require `--approve-action`. Unsupported requests are rejected rather than mapped
+to invented capabilities.
+
+Try the task workflow without recording audio:
+
+```powershell
+.\.venv\Scripts\python.exe -m switchsafe.cli `
+  --text-agent "Add submit application to my tasks"
+
+# Run again with explicit approval to persist it:
+.\.venv\Scripts\python.exe -m switchsafe.cli `
+  --text-agent "Add submit application to my tasks" `
+  --approve-action
+
+.\.venv\Scripts\python.exe -m switchsafe.cli `
+  --text-agent "Show my tasks"
 ```
 
 ```powershell
@@ -128,5 +152,6 @@ $env:PYTHONPATH = "$PWD\src"
 
 Add `--approve-action` only when authorizing a mutating tool. Audio that fails
 the ASR confidence gate never reaches the planner. Ollama must be running and the
-selected Qwen model must be installed. The returned JSON contains each agent's
-decision, retrieved evidence, tool calls, observations and verification result.
+selected Qwen model must be installed. The default database is excluded from Git
+at `data/local/switchsafe.db`. The returned JSON contains the transcript, planned
+actions, executed tools, results, warnings and execution trace.

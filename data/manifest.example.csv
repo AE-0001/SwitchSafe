@@ -1,0 +1,2 @@
+sample_id,audio_path,reference,speaker_id,condition,critical_action,critical_entity_confidence,is_safe
+speaker_001_001,raw/imda/speaker_001/001.wav,Replace with independent reference text,speaker_001,clean,false,,

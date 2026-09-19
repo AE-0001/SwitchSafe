@@ -4,6 +4,7 @@ __pycache__/
 .ruff_cache/
 data/raw/
 data/derived/
+data/local/
 models/
 *.wav
 *.mp3

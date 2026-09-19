@@ -11,7 +11,8 @@ from switchsafe.policy import RiskSignals, decide, policy_metrics
 from switchsafe.scenarios import build_scenarios, evaluation_corpus
 from switchsafe.llm_provider import OllamaPlanner, evaluate_planner
 from switchsafe.transcribe import FasterWhisperTranscriber
-from switchsafe.voice_pipeline import VoiceAgentPipeline
+from switchsafe.task_pipeline import VoiceTaskPipeline
+from switchsafe.task_store import TaskStore, TaskTools
 
 
 def demo() -> dict:
@@ -38,6 +39,8 @@ def main() -> None:
     parser.add_argument("--llm-eval", type=int, metavar="N", help="evaluate N cases with local Ollama")
     parser.add_argument("--llm-model", default="qwen3:4b")
     parser.add_argument("--voice-agent", type=Path, help="run the integrated pipeline on one audio file")
+    parser.add_argument("--text-agent", help="run the local action agent from typed text")
+    parser.add_argument("--task-db", type=Path, default=Path("data/local/switchsafe.db"))
     parser.add_argument("--approve-action", action="store_true",
                         help="approve mutating tools for this invocation")
     parser.add_argument("--audio-dir", type=Path, help="transcribe unlabelled WAV files")
@@ -67,11 +70,16 @@ def main() -> None:
         scenarios = build_scenarios()[:args.llm_eval]
         print(json.dumps(evaluate_planner(OllamaPlanner(args.llm_model), scenarios), indent=2))
         return
-    if args.voice_agent:
-        pipeline = VoiceAgentPipeline(
-            FasterWhisperTranscriber(args.model), OllamaPlanner(args.llm_model), evaluation_corpus()
+    if args.voice_agent or args.text_agent:
+        store = TaskStore(args.task_db)
+        pipeline = VoiceTaskPipeline(
+            OllamaPlanner(args.llm_model), TaskTools(store),
+            FasterWhisperTranscriber(args.model) if args.voice_agent else None,
         )
-        print(json.dumps(pipeline.run(args.voice_agent, args.approve_action), indent=2))
+        result = (pipeline.run_audio(args.voice_agent, args.approve_action)
+                  if args.voice_agent else pipeline.run_text(args.text_agent, args.approve_action))
+        print(json.dumps(result, indent=2))
+        store.close()
         return
     if args.audio_dir:
         print(json.dumps(run_directory(args.audio_dir, args.output, args.model, args.limit), indent=2))
